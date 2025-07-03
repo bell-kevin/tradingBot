@@ -8,7 +8,7 @@ This project includes a simple moving average crossover bot implemented in
 `trading_bot.py`. It fetches historical price data and generates basic
 buy/sell signals.
 
-This repository also includes a neural network based bot in `neural_trading_bot.py` which trains an MLP model to predict prices. It runs data downloads and backtests concurrently for multiple symbols.
+This repository also includes a neural network based bot in `neural_trading_bot.py` which trains an MLP model to predict prices. It runs data downloads and backtests concurrently for multiple symbols. For a more advanced example using an LSTM, see `lstm_trading_bot.py` which demonstrates parallel backtesting with a simple recurrent network.
 
 ### Getting Started on Windows 11 with VS Code
 
@@ -36,9 +36,10 @@ Follow these steps if you are new to Python and Git:
    ```
 9. Run the example bot:
    ```bash
-   python trading_bot.py
-   ```
-   Or try the neural version with `python neural_trading_bot.py`.
+  python trading_bot.py
+  ```
+  Or try the neural version with `python neural_trading_bot.py`,
+  or the LSTM version with `python lstm_trading_bot.py`.
 
 ### Usage
 
@@ -48,9 +49,10 @@ Follow these steps if you are new to Python and Git:
    ```
 2. Run either of the scripts:
    ```bash
-   python trading_bot.py
-   python neural_trading_bot.py
-   ```
+  python trading_bot.py
+  python neural_trading_bot.py
+  python lstm_trading_bot.py
+  ```
 
 ### Disclaimer
 
