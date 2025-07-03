@@ -8,15 +8,18 @@ This project includes a simple moving average crossover bot implemented in
 `trading_bot.py`. It fetches historical price data and generates basic
 buy/sell signals.
 
+This repository also includes a neural network based bot in `neural_trading_bot.py` which trains an MLP model to predict prices. It runs data downloads and backtests concurrently for multiple symbols.
+
 ### Usage
 
 1. Install the dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-2. Run the script:
+2. Run either of the scripts:
    ```bash
    python trading_bot.py
+   python neural_trading_bot.py
    ```
 
 ### Disclaimer
@@ -48,5 +51,3 @@ code in Copilot.
 ![Logo of the GiveUpGitHub campaign](https://sfconservancy.org/img/GiveUpGitHub.png)
 
 <p align="right"><a href="#readme-top">back to top</a></p>
-
-
