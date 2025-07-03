@@ -10,6 +10,36 @@ buy/sell signals.
 
 This repository also includes a neural network based bot in `neural_trading_bot.py` which trains an MLP model to predict prices. It runs data downloads and backtests concurrently for multiple symbols.
 
+### Getting Started on Windows 11 with VS Code
+
+Follow these steps if you are new to Python and Git:
+
+1. **Install Python** from [python.org](https://www.python.org/downloads/windows/) and select the option to *Add python.exe to PATH*.
+2. **Install Git for Windows** from [git-scm.com](https://git-scm.com/download/win).
+3. **Install Visual Studio Code** from [code.visualstudio.com](https://code.visualstudio.com/).
+4. Open *Command Prompt* or *PowerShell* and clone this repository:
+   ```bash
+   git clone https://github.com/<your username>/tradingBot.git
+   ```
+5. Start VS Code and choose **File > Open Folder**, then select the `tradingBot` directory.
+6. In VS Code open a terminal via **Terminal > New Terminal** and create a virtual environment:
+   ```bash
+   python -m venv .venv
+   ```
+7. Activate the environment:
+   ```bash
+   .venv\Scripts\activate
+   ```
+8. Install the dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+9. Run the example bot:
+   ```bash
+   python trading_bot.py
+   ```
+   Or try the neural version with `python neural_trading_bot.py`.
+
 ### Usage
 
 1. Install the dependencies:
