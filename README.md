@@ -25,3 +25,26 @@ code in Copilot.
 ![Logo of the GiveUpGitHub campaign](https://sfconservancy.org/img/GiveUpGitHub.png)
 
 <p align="right"><a href="#readme-top">back to top</a></p>
+
+## Example Trading Bot
+
+This project includes a simple moving average crossover bot implemented in
+`trading_bot.py`. It fetches historical price data and generates basic
+buy/sell signals.
+
+### Usage
+
+1. Install the dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. Run the script:
+   ```bash
+   python trading_bot.py
+   ```
+
+### Disclaimer
+
+This code is provided for informational purposes only and carries no
+guarantee of profitability. Trading involves risk, and past performance
+does not ensure future results. Use the bot at your own risk.
