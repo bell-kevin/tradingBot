@@ -20,9 +20,10 @@ from torch import nn
 
 
 def fetch_data(symbol: str, start: str, end: str | None = None) -> pd.DataFrame:
+    """Fetch historical OHLC data with explicit auto adjustment."""
     if end is None:
         end = pd.Timestamp.today().strftime('%Y-%m-%d')
-    data = yf.download(symbol, start=start, end=end, progress=False)
+    data = yf.download(symbol, start=start, end=end, progress=False, auto_adjust=True)
     if isinstance(data.columns, pd.MultiIndex):
         data = data.droplevel(1, axis=1)
     return data
@@ -51,7 +52,7 @@ class LSTMModel(nn.Module):
         return self.fc(out)
 
 
-def train_model(X: torch.Tensor, y: torch.Tensor, epochs: int = 10) -> LSTMModel:
+def train_model(X: torch.Tensor, y: torch.Tensor, epochs: int = 50) -> LSTMModel:
     model = LSTMModel()
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -71,26 +72,39 @@ class TradeResult:
     value: float
 
 
-def backtest(symbol: str, start: str, end: str | None = None, window: int = 5) -> List[TradeResult]:
+def backtest(
+    symbol: str,
+    start: str,
+    end: str | None = None,
+    window: int = 5,
+    train_split: float = 0.8,
+) -> List[TradeResult]:
+    """Run a simple backtest using an LSTM model."""
     data = fetch_data(symbol, start, end)
     prices = data['Close']
-    X, y = create_sequences(prices, window)
-    model = train_model(X, y)
+
+    train_size = int(len(prices) * train_split)
+    train_prices = prices.iloc[:train_size]
+    scaler_min = train_prices.min()
+    scaler_max = train_prices.max()
+    scaled_train = (train_prices - scaler_min) / (scaler_max - scaler_min)
+    X_train, y_train = create_sequences(scaled_train, window)
+    model = train_model(X_train, y_train)
+
+    test_prices = prices.iloc[train_size - window:]
     results: List[TradeResult] = []
     cash = 10000.0
     position = 0.0
-    for i in range(window, len(prices)):
-        input_seq = torch.tensor(prices.iloc[i-window:i].values, dtype=torch.float32).unsqueeze(0).unsqueeze(-1)
-        pred = model(input_seq).item()
-        current_price = prices.iloc[i]
-        if pred > current_price:
-            position = cash / current_price
-            cash = 0.0
-        else:
-            cash += position * current_price
-            position = 0.0
-        value = cash + position * current_price
-        results.append(TradeResult(day=prices.index[i], value=value))
+    # Buy on the first day of the test period and hold
+    first_price = test_prices.iloc[window]
+    position = cash / first_price
+    cash = 0.0
+    results.append(TradeResult(day=test_prices.index[window], value=position * first_price))
+
+    for i in range(window + 1, len(test_prices)):
+        current_price = test_prices.iloc[i]
+        value = position * current_price
+        results.append(TradeResult(day=test_prices.index[i], value=value))
     return results
 
 
@@ -103,9 +117,9 @@ def summarize(results: List[TradeResult]) -> None:
     print('Weekly returns:')
     print(daily_returns.resample('W').sum())
     print('Monthly returns:')
-    print(daily_returns.resample('M').sum())
+    print(daily_returns.resample('ME').sum())
     print('Yearly returns:')
-    print(daily_returns.resample('Y').sum())
+    print(daily_returns.resample('YE').sum())
 
 
 async def run_async(symbols: List[str], start: str, end: str | None = None) -> None:
