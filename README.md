@@ -36,8 +36,8 @@ Follow these steps if you are new to Python and Git:
    ```
 9. Run the example bot:
    ```bash
-  python trading_bot.py
-  ```
+   python trading_bot.py
+   ```
   Or try the neural version with `python neural_trading_bot.py`,
   or the LSTM version with `python lstm_trading_bot.py`.
 
