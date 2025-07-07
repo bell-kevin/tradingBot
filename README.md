@@ -49,10 +49,10 @@ Follow these steps if you are new to Python and Git:
    ```
 2. Run either of the scripts:
    ```bash
-  python trading_bot.py
-  python neural_trading_bot.py
-  python lstm_trading_bot.py
-  ```
+   python trading_bot.py
+   python neural_trading_bot.py
+   python lstm_trading_bot.py
+   ```
 
 ### Disclaimer
 
