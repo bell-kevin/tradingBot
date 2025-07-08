@@ -109,17 +109,44 @@ def backtest(
 
 
 def summarize(results: List[TradeResult]) -> None:
-    df = pd.DataFrame([{'day': r.day, 'value': r.value} for r in results]).set_index('day')
-    daily_returns = df['value'].pct_change().fillna(0)
-    print('Final portfolio value:', df['value'].iloc[-1])
-    print('Daily returns:')
+    df = pd.DataFrame([
+        {"day": r.day, "value": r.value} for r in results
+    ]).set_index("day")
+    daily_returns = df["value"].pct_change().fillna(0)
+
+    start_value = df["value"].iloc[0]
+    final_value = df["value"].iloc[-1]
+    profit = final_value - start_value
+
+    trading_days = len(df)
+    calendar_days = (df.index[-1] - df.index[0]).days
+    profit_per_day = profit / trading_days
+
+    threshold = 424.27
+    threshold_days = None
+    for day, value in df["value"].items():
+        if value - start_value >= threshold:
+            threshold_days = (day - df.index[0]).days
+            break
+
+    print("Starting portfolio value:", start_value)
+    print("Final portfolio value:", final_value)
+    print("Total profit:", profit)
+    print(f"Total trading days: {trading_days}")
+    print(f"Elapsed calendar days: {calendar_days}")
+    print(f"Average profit per trading day: {profit_per_day}")
+    if threshold_days is not None:
+        print(f"Days to gain ${threshold}: {threshold_days}")
+    else:
+        print(f"Portfolio never gained ${threshold}")
+    print("Daily returns:")
     print(daily_returns)
-    print('Weekly returns:')
-    print(daily_returns.resample('W').sum())
-    print('Monthly returns:')
-    print(daily_returns.resample('ME').sum())
-    print('Yearly returns:')
-    print(daily_returns.resample('YE').sum())
+    print("Weekly returns:")
+    print(daily_returns.resample("W").sum())
+    print("Monthly returns:")
+    print(daily_returns.resample("ME").sum())
+    print("Yearly returns:")
+    print(daily_returns.resample("YE").sum())
 
 
 async def run_async(symbols: List[str], start: str, end: str | None = None) -> None:
