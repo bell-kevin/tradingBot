@@ -2,6 +2,8 @@
 
 This example trains a lightweight LSTM model on historical price data and
 demonstrates concurrent backtesting using ``asyncio`` and ``ThreadPoolExecutor``.
+The bot makes daily buy/sell decisions based on the model's price prediction
+for the current day in an attempt to maximize profit.
 
 Disclaimer: this code is for research and educational purposes only and comes
 with no guarantee of profitability. Use at your own risk.
@@ -41,9 +43,14 @@ def create_sequences(data: pd.Series, window: int) -> Tuple[torch.Tensor, torch.
 
 
 class LSTMModel(nn.Module):
-    def __init__(self, input_size: int = 1, hidden_size: int = 32, num_layers: int = 1):
+    def __init__(self, input_size: int = 1, hidden_size: int = 64, num_layers: int = 2):
         super().__init__()
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
+        self.lstm = nn.LSTM(
+            input_size,
+            hidden_size,
+            num_layers,
+            batch_first=True,
+        )
         self.fc = nn.Linear(hidden_size, 1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -52,7 +59,7 @@ class LSTMModel(nn.Module):
         return self.fc(out)
 
 
-def train_model(X: torch.Tensor, y: torch.Tensor, epochs: int = 50) -> LSTMModel:
+def train_model(X: torch.Tensor, y: torch.Tensor, epochs: int = 100) -> LSTMModel:
     model = LSTMModel()
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -91,20 +98,33 @@ def backtest(
     X_train, y_train = create_sequences(scaled_train, window)
     model = train_model(X_train, y_train)
 
-    test_prices = prices.iloc[train_size - window:]
+    scaled_prices = (prices - scaler_min) / (scaler_max - scaler_min)
     results: List[TradeResult] = []
     cash = 10000.0
     position = 0.0
-    # Buy on the first day of the test period and hold
-    first_price = test_prices.iloc[window]
-    position = cash / first_price
-    cash = 0.0
-    results.append(TradeResult(day=test_prices.index[window], value=position * first_price))
 
-    for i in range(window + 1, len(test_prices)):
-        current_price = test_prices.iloc[i]
-        value = position * current_price
-        results.append(TradeResult(day=test_prices.index[i], value=value))
+    for i in range(train_size, len(prices)):
+        if i < window:
+            continue
+        seq = torch.tensor(
+            scaled_prices.iloc[i - window : i].values, dtype=torch.float32
+        ).unsqueeze(0).unsqueeze(-1)
+        model.eval()
+        with torch.no_grad():
+            pred_scaled = model(seq).item()
+        pred_price = pred_scaled * (scaler_max - scaler_min) + scaler_min
+        current_price = prices.iloc[i]
+
+        if pred_price > current_price and cash > 0.0:
+            position = cash / current_price
+            cash = 0.0
+        elif pred_price < current_price and position > 0.0:
+            cash = position * current_price
+            position = 0.0
+
+        portfolio_value = cash + position * current_price
+        results.append(TradeResult(day=prices.index[i], value=portfolio_value))
+
     return results
 
 
@@ -114,17 +134,18 @@ def summarize(results: List[TradeResult]) -> None:
     ]).set_index("day")
     daily_returns = df["value"].pct_change().fillna(0)
 
-    start_value = df["value"].iloc[0]
+    # assume we start with $10,000 before any trades
+    start_value = 10000.0
     final_value = df["value"].iloc[-1]
     profit = final_value - start_value
-    # number of trading days between first and last result
-    duration_days = max((df.index[-1] - df.index[0]).days, 1)
-    profit_per_day = profit / duration_days
+    # number of trading days in the backtest
+    trading_days = len(df)
+    profit_per_day = profit / trading_days
 
     print("Initial investment:", start_value)
     print("Final portfolio value:", final_value)
     print("Total profit:", profit)
-    print(f"Duration: {duration_days} days")
+    print(f"Duration: {trading_days} days")
     print(f"Average profit per day: {profit_per_day}")
     print("Daily returns:")
     print(daily_returns)
