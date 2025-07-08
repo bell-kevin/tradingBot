@@ -60,6 +60,9 @@ Follow these steps if you are new to Python and Git:
    ```bash
    python boosted_trading_bot.py
    ```
+   ```bash
+   python random_forest_trading_bot.py
+   ```
    
   
    
