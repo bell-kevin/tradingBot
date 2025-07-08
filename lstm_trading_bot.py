@@ -85,6 +85,7 @@ def backtest(
     end: str | None = None,
     window: int = 5,
     train_split: float = 0.8,
+    threshold: float = 0.0,
 ) -> List[TradeResult]:
     """Run a simple backtest using an LSTM model."""
     data = fetch_data(symbol, start, end)
@@ -115,10 +116,10 @@ def backtest(
         pred_price = pred_scaled * (scaler_max - scaler_min) + scaler_min
         current_price = prices.iloc[i]
 
-        if pred_price > current_price and cash > 0.0:
+        if pred_price > current_price * (1 + threshold) and cash > 0.0:
             position = cash / current_price
             cash = 0.0
-        elif pred_price < current_price and position > 0.0:
+        elif pred_price < current_price * (1 - threshold) and position > 0.0:
             cash = position * current_price
             position = 0.0
 
