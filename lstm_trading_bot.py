@@ -138,14 +138,14 @@ def summarize(results: List[TradeResult]) -> None:
     start_value = 10000.0
     final_value = df["value"].iloc[-1]
     profit = final_value - start_value
-    # number of trading days between first and last result
-    duration_days = max((df.index[-1] - df.index[0]).days, 1)
-    profit_per_day = profit / duration_days
+    # number of trading days in the backtest
+    trading_days = len(df)
+    profit_per_day = profit / trading_days
 
     print("Initial investment:", start_value)
     print("Final portfolio value:", final_value)
     print("Total profit:", profit)
-    print(f"Duration: {duration_days} days")
+    print(f"Duration: {trading_days} days")
     print(f"Average profit per day: {profit_per_day}")
     print("Daily returns:")
     print(daily_returns)
