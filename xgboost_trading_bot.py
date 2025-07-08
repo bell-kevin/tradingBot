@@ -1,11 +1,12 @@
-"""Gradient Boosting trading bot.
+"""XGBoost-based trading bot.
 
-This example uses a GradientBoostingRegressor model trained on lagged closing prices
-and runs a simple backtest. The strategy buys when tomorrow's predicted price is
-higher than today's and sells otherwise. Results include average profit per day.
+This script trains an ``XGBRegressor`` model on lagged closing prices
+and performs a simple backtest.  It buys when the predicted price for
+the next day is higher than today's close and sells otherwise.  The
+results show the average profit per day.
 
-Disclaimer: this code is for research and educational purposes only and carries
-no guarantee of profitability. Use at your own risk.
+This code is for educational purposes only and comes with no guarantee
+of profitability.  Use at your own risk.
 """
 
 import asyncio
@@ -13,11 +14,9 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import List
 
-import numpy as np
 import pandas as pd
 import yfinance as yf
-from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.model_selection import GridSearchCV
+from xgboost import XGBRegressor
 
 
 @dataclass
@@ -35,7 +34,7 @@ def fetch_data(symbol: str, start: str, end: str | None = None) -> pd.DataFrame:
     return data
 
 
-def prepare_features(data: pd.DataFrame, window: int = 5) -> tuple[pd.DataFrame, pd.Series]:
+def prepare_features(data: pd.DataFrame, window: int = 10) -> tuple[pd.DataFrame, pd.Series]:
     df = data.copy()
     for i in range(1, window + 1):
         df[f"lag_{i}"] = df["Close"].shift(i)
@@ -46,16 +45,18 @@ def prepare_features(data: pd.DataFrame, window: int = 5) -> tuple[pd.DataFrame,
     return X, y
 
 
-def train_model(X: pd.DataFrame, y: pd.Series) -> GradientBoostingRegressor:
-    params = {
-        "n_estimators": [100, 200],
-        "learning_rate": [0.05, 0.1],
-        "max_depth": [2, 3],
-    }
-    gbr = GradientBoostingRegressor(random_state=42)
-    search = GridSearchCV(gbr, params, cv=3)
-    search.fit(X, y)
-    return search.best_estimator_
+def train_model(X: pd.DataFrame, y: pd.Series) -> XGBRegressor:
+    model = XGBRegressor(
+        n_estimators=300,
+        learning_rate=0.05,
+        max_depth=3,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=42,
+        objective="reg:squarederror",
+    )
+    model.fit(X, y)
+    return model
 
 
 def backtest(symbol: str, start: str, end: str | None = None) -> List[TradeResult]:
@@ -68,7 +69,6 @@ def backtest(symbol: str, start: str, end: str | None = None) -> List[TradeResul
     position = 0.0
 
     for idx in range(len(feats)):
-        # Keep feature names when predicting to avoid sklearn warnings
         X_row = feats.iloc[[idx]]
         pred_price = model.predict(X_row)[0]
         current_price = data["Close"].iloc[idx]
@@ -85,7 +85,7 @@ def backtest(symbol: str, start: str, end: str | None = None) -> List[TradeResul
 
 
 def summarize(results: List[TradeResult]) -> None:
-    df = pd.DataFrame([{"day": r.day, "value": r.value} for r in results]).set_index("day")
+    df = pd.DataFrame({"day": [r.day for r in results], "value": [r.value for r in results]}).set_index("day")
     daily_returns = df["value"].pct_change().fillna(0)
     start_value = 10000.0
     final_value = df["value"].iloc[-1]
