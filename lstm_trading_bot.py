@@ -109,17 +109,27 @@ def backtest(
 
 
 def summarize(results: List[TradeResult]) -> None:
-    df = pd.DataFrame([{'day': r.day, 'value': r.value} for r in results]).set_index('day')
-    daily_returns = df['value'].pct_change().fillna(0)
-    print('Final portfolio value:', df['value'].iloc[-1])
-    print('Daily returns:')
+    df = pd.DataFrame([
+        {"day": r.day, "value": r.value} for r in results
+    ]).set_index("day")
+    daily_returns = df["value"].pct_change().fillna(0)
+
+    start_value = df["value"].iloc[0]
+    final_value = df["value"].iloc[-1]
+    profit = final_value - start_value
+    profit_per_day = profit / len(df)
+
+    print("Starting portfolio value:", start_value)
+    print("Final portfolio value:", final_value)
+    print(f"Average profit per day over {len(df)} days: {profit_per_day}")
+    print("Daily returns:")
     print(daily_returns)
-    print('Weekly returns:')
-    print(daily_returns.resample('W').sum())
-    print('Monthly returns:')
-    print(daily_returns.resample('ME').sum())
-    print('Yearly returns:')
-    print(daily_returns.resample('YE').sum())
+    print("Weekly returns:")
+    print(daily_returns.resample("W").sum())
+    print("Monthly returns:")
+    print(daily_returns.resample("ME").sum())
+    print("Yearly returns:")
+    print(daily_returns.resample("YE").sum())
 
 
 async def run_async(symbols: List[str], start: str, end: str | None = None) -> None:
