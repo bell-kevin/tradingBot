@@ -55,7 +55,7 @@ Follow these steps if you are new to Python and Git:
    python trading_bot.py
    ```
    ```bash
-    python lstm_trading_bot.py
+   python lstm_trading_bot.py
    ```
    ```bash
    python boosted_trading_bot.py
