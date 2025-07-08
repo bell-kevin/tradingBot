@@ -54,6 +54,8 @@ Follow these steps if you are new to Python and Git:
    python lstm_trading_bot.py
    ```
 
+To update your local repository with the Github repository, run: git pull origin main
+
 ### Disclaimer
 
 This code is provided for informational purposes only and carries no
