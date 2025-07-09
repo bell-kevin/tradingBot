@@ -2,7 +2,7 @@
 
 # 
 
-## Example Trading Bot
+##  Trading Bot
 
 This project includes a simple moving average crossover bot implemented in
 `trading_bot.py`. It fetches historical price data and generates basic
