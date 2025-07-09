@@ -84,7 +84,18 @@ def backtest(symbol: str, start: str, end: str | None = None) -> List[TradeResul
     return results
 
 
-def summarize(results: List[TradeResult]) -> None:
+def _format_duration(days: int) -> str:
+    years = days // 365
+    months = (days % 365) // 30
+    parts = []
+    if years:
+        parts.append(f"{years} year{'s' if years != 1 else ''}")
+    if months:
+        parts.append(f"{months} month{'s' if months != 1 else ''}")
+    return " and ".join(parts) if parts else "0 months"
+
+
+def summarize(results: List[TradeResult]) -> dict:
     df = pd.DataFrame([{"day": r.day, "value": r.value} for r in results]).set_index("day")
     daily_returns = df["value"].pct_change().fillna(0)
     start_value = 10000.0
@@ -96,7 +107,8 @@ def summarize(results: List[TradeResult]) -> None:
     print("Initial investment:", start_value)
     print("Final portfolio value:", final_value)
     print("Total profit:", profit)
-    print(f"Duration: {trading_days} days")
+    duration_str = _format_duration(trading_days)
+    print(f"Duration: {trading_days} days ({duration_str})")
     print(f"Average profit per day: {profit_per_day}")
     print("Daily returns:")
     print(daily_returns)
@@ -107,15 +119,35 @@ def summarize(results: List[TradeResult]) -> None:
     print("Yearly returns:")
     print(daily_returns.resample("YE").sum())
 
+    return {
+        "start": start_value,
+        "final": final_value,
+        "profit": profit,
+        "days": trading_days,
+        "profit_per_day": profit_per_day,
+    }
+
 
 async def run_async(symbols: List[str], start: str, end: str | None = None) -> None:
     loop = asyncio.get_running_loop()
     with ThreadPoolExecutor() as executor:
         tasks = [loop.run_in_executor(executor, backtest, sym, start, end) for sym in symbols]
         all_results = await asyncio.gather(*tasks)
+    summaries: list[tuple[str, dict]] = []
     for symbol, results in zip(symbols, all_results):
         print(f"\nResults for {symbol}")
-        summarize(results)
+        summary = summarize(results)
+        summaries.append((symbol, summary))
+
+    print("\nFinal summary")
+    for symbol, s in summaries:
+        duration_str = _format_duration(s["days"])
+        print(f"\nResults for {symbol}")
+        print("Initial investment:", s["start"])
+        print("Final portfolio value:", s["final"])
+        print("Total profit:", s["profit"])
+        print(f"Duration: {s['days']} days ({duration_str})")
+        print(f"Average profit per day: {s['profit_per_day']}")
 
 
 if __name__ == "__main__":
