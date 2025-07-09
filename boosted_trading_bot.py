@@ -64,7 +64,7 @@ def backtest(symbol: str, start: str, end: str | None = None) -> List[TradeResul
     model = train_model(feats, target)
 
     results: List[TradeResult] = []
-    cash = 10000.0
+    cash = 100.0
     position = 0.0
 
     for idx in range(len(feats)):
@@ -98,7 +98,7 @@ def _format_duration(days: int) -> str:
 def summarize(results: List[TradeResult]) -> dict:
     df = pd.DataFrame([{"day": r.day, "value": r.value} for r in results]).set_index("day")
     daily_returns = df["value"].pct_change().fillna(0)
-    start_value = 10000.0
+    start_value = 100.0
     final_value = df["value"].iloc[-1]
     profit = final_value - start_value
     trading_days = len(df)
