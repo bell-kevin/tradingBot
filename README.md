@@ -10,6 +10,13 @@ buy/sell signals.
 
 This repository also includes a neural network based bot in `neural_trading_bot.py` which trains an MLP model to predict prices. It runs data downloads and backtests concurrently for multiple symbols. For a more advanced example using an LSTM, see `lstm_trading_bot.py` which demonstrates parallel backtesting with a simple recurrent network.
 
+### Key Features
+
+- **Multiple Strategies** – experiment with moving averages, a neural network, LSTM, gradient boosting, and random forest models.
+- **Easy Backtesting** – load historical data with the included helpers and assess strategies quickly.
+- **Modular Design** – each bot lives in its own file so you can tweak code without touching the others.
+
+
 ### Getting Started on Windows 11 with VS Code
 
 Follow these steps if you are new to Python and Git:
