@@ -47,7 +47,7 @@ def backtest(symbol: str, start: str, end: str | None = None) -> List[TradeResul
 
     results: List[TradeResult] = []
     position = 0.0
-    cash = 10000.0
+    cash = 100.0
 
     for idx in range(len(feats)):
         X = feats.iloc[[idx]].values

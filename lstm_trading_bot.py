@@ -101,7 +101,7 @@ def backtest(
 
     scaled_prices = (prices - scaler_min) / (scaler_max - scaler_min)
     results: List[TradeResult] = []
-    cash = 10000.0
+    cash = 100.0
     position = 0.0
 
     for i in range(train_size, len(prices)):
@@ -135,8 +135,8 @@ def summarize(results: List[TradeResult]) -> None:
     ]).set_index("day")
     daily_returns = df["value"].pct_change().fillna(0)
 
-    # assume we start with $10,000 before any trades
-    start_value = 10000.0
+    # assume we start with $100 before any trades
+    start_value = 100.0
     final_value = df["value"].iloc[-1]
     profit = final_value - start_value
     # number of trading days in the backtest
