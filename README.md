@@ -48,10 +48,11 @@ Follow these steps if you are new to Python and Git:
    ```bash
    pip install -r requirements.txt
    ```
-2. Run one of the scripts:
-   ```bash
-   python boosted_trading_bot.py
-   ```
+2. Run one of the scripts. ``boosted_trading_bot.py`` now supports
+   optional dynamic leverage parameters for more aggressive backtests:
+  ```bash
+  python boosted_trading_bot.py
+  ```
 To update your local repository with the Github repository, run: 
    ```bash
    git pull origin main
