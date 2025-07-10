@@ -35,7 +35,10 @@ def fetch_data(symbol: str, start: str, end: str | None = None) -> pd.DataFrame:
     return data
 
 
-def prepare_features(data: pd.DataFrame, window: int = 5) -> tuple[pd.DataFrame, pd.Series]:
+def prepare_features(
+    data: pd.DataFrame, window: int = 5
+) -> tuple[pd.DataFrame, pd.Series]:
+    """Create lagged close price features."""
     df = data.copy()
     for i in range(1, window + 1):
         df[f"lag_{i}"] = df["Close"].shift(i)
@@ -47,27 +50,34 @@ def prepare_features(data: pd.DataFrame, window: int = 5) -> tuple[pd.DataFrame,
 
 
 def train_model(X: pd.DataFrame, y: pd.Series) -> GradientBoostingRegressor:
+    """Train a Gradient Boosting model using grid search."""
     params = {
-        "n_estimators": [100, 200],
-        "learning_rate": [0.05, 0.1],
-        "max_depth": [2, 3],
+        "n_estimators": [200, 400, 600],
+        "learning_rate": [0.05, 0.1, 0.2],
+        "max_depth": [2, 3, 4],
     }
     gbr = GradientBoostingRegressor(random_state=42)
-    search = GridSearchCV(gbr, params, cv=3)
+    search = GridSearchCV(gbr, params, cv=5, n_jobs=-1)
     search.fit(X, y)
     return search.best_estimator_
 
 
-def backtest(symbol: str, start: str, end: str | None = None) -> List[TradeResult]:
+def backtest(
+    symbol: str,
+    start: str,
+    end: str | None = None,
+    window: int = 5,
+    leverage: float = 1.5,
+) -> List[TradeResult]:
+    """Run a simple leveraged backtest."""
     data = fetch_data(symbol, start, end)
-    feats, target = prepare_features(data)
+    feats, target = prepare_features(data, window=window)
     model = train_model(feats, target)
 
     results: List[TradeResult] = []
     cash = 100.0
     position = 0.0
     debt = 0.0
-    leverage = 1.2
 
     for idx in range(len(feats)):
         # Keep feature names when predicting to avoid sklearn warnings
@@ -132,10 +142,19 @@ def summarize(results: List[TradeResult]) -> dict:
     }
 
 
-async def run_async(symbols: List[str], start: str, end: str | None = None) -> None:
+async def run_async(
+    symbols: List[str],
+    start: str,
+    end: str | None = None,
+    window: int = 5,
+    leverage: float = 1.5,
+) -> None:
     loop = asyncio.get_running_loop()
     with ThreadPoolExecutor() as executor:
-        tasks = [loop.run_in_executor(executor, backtest, sym, start, end) for sym in symbols]
+        tasks = [
+            loop.run_in_executor(executor, backtest, sym, start, end, window, leverage)
+            for sym in symbols
+        ]
         all_results = await asyncio.gather(*tasks)
     summaries: list[tuple[str, dict]] = []
     for symbol, results in zip(symbols, all_results):
@@ -155,4 +174,4 @@ async def run_async(symbols: List[str], start: str, end: str | None = None) -> N
 
 
 if __name__ == "__main__":
-    asyncio.run(run_async(["SPY"], start="2015-01-01"))
+    asyncio.run(run_async(["SPY"], start="2015-01-01", window=10, leverage=2.0))
