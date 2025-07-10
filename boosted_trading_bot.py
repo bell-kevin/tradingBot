@@ -1,8 +1,10 @@
 """Gradient Boosting trading bot.
 
-This example uses a GradientBoostingRegressor model trained on lagged closing prices
-and runs a simple backtest. The strategy buys when tomorrow's predicted price is
-higher than today's and sells otherwise. Results include average profit per day.
+This example uses a ``GradientBoostingRegressor`` model trained on lagged closing
+prices and runs a simple backtest. The strategy buys when tomorrow's predicted
+price is higher than today's and sells otherwise. Leverage can be fixed or
+dynamically adjusted based on the expected price change. Results include average
+profit per day.
 
 Disclaimer: this code is for research and educational purposes only and carries
 no guarantee of profitability. Use at your own risk.
@@ -68,8 +70,16 @@ def backtest(
     end: str | None = None,
     window: int = 5,
     leverage: float = 1.5,
+    dynamic_factor: float = 0.0,
+    max_leverage: float = 10.0,
 ) -> List[TradeResult]:
-    """Run a simple leveraged backtest."""
+    """Run a leveraged backtest.
+
+    If ``dynamic_factor`` is greater than zero, leverage is adjusted
+    dynamically based on the predicted percentage gain. This allows
+    aggressive strategies but greatly increases risk. ``max_leverage``
+    provides an upper bound to avoid runaway bets.
+    """
     data = fetch_data(symbol, start, end)
     feats, target = prepare_features(data, window=window)
     model = train_model(feats, target)
@@ -85,8 +95,14 @@ def backtest(
         pred_price = model.predict(X_row)[0]
         current_price = data["Close"].iloc[idx]
         if pred_price > current_price and cash > 0.0:
-            debt = (leverage - 1) * cash
-            position = leverage * cash / current_price
+            if dynamic_factor > 0:
+                gain_pct = (pred_price - current_price) / current_price
+                lev = 1 + dynamic_factor * gain_pct
+                lev = max(1.0, min(lev, max_leverage))
+            else:
+                lev = leverage
+            debt = (lev - 1) * cash
+            position = lev * cash / current_price
             cash = 0.0
         elif pred_price <= current_price and position > 0.0:
             cash = position * current_price - debt
@@ -148,11 +164,23 @@ async def run_async(
     end: str | None = None,
     window: int = 5,
     leverage: float = 1.5,
+    dynamic_factor: float = 0.0,
+    max_leverage: float = 10.0,
 ) -> None:
     loop = asyncio.get_running_loop()
     with ThreadPoolExecutor() as executor:
         tasks = [
-            loop.run_in_executor(executor, backtest, sym, start, end, window, leverage)
+            loop.run_in_executor(
+                executor,
+                backtest,
+                sym,
+                start,
+                end,
+                window,
+                leverage,
+                dynamic_factor,
+                max_leverage,
+            )
             for sym in symbols
         ]
         all_results = await asyncio.gather(*tasks)
@@ -174,4 +202,16 @@ async def run_async(
 
 
 if __name__ == "__main__":
-    asyncio.run(run_async(["SPY"], start="2015-01-01", window=10, leverage=2.0))
+    # Example run with aggressive dynamic leverage. High values can
+    # yield very large profits in backtests but come with enormous risk
+    # and may not be achievable in real trading.
+    asyncio.run(
+        run_async(
+            ["SPY"],
+            start="2015-01-01",
+            window=10,
+            leverage=2.0,
+            dynamic_factor=200.0,
+            max_leverage=50.0,
+        )
+    )
