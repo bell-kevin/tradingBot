@@ -66,6 +66,8 @@ def backtest(symbol: str, start: str, end: str | None = None) -> List[TradeResul
     results: List[TradeResult] = []
     cash = 100.0
     position = 0.0
+    debt = 0.0
+    leverage = 1.2
 
     for idx in range(len(feats)):
         # Keep feature names when predicting to avoid sklearn warnings
@@ -73,12 +75,14 @@ def backtest(symbol: str, start: str, end: str | None = None) -> List[TradeResul
         pred_price = model.predict(X_row)[0]
         current_price = data["Close"].iloc[idx]
         if pred_price > current_price and cash > 0.0:
-            position = cash / current_price
+            debt = (leverage - 1) * cash
+            position = leverage * cash / current_price
             cash = 0.0
         elif pred_price <= current_price and position > 0.0:
-            cash = position * current_price
+            cash = position * current_price - debt
+            debt = 0.0
             position = 0.0
-        portfolio_value = cash + position * current_price
+        portfolio_value = cash + position * current_price - debt
         results.append(TradeResult(day=feats.index[idx], value=portfolio_value))
 
     return results
