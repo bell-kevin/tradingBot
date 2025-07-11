@@ -5,7 +5,7 @@ from your_module import prepare_features, train_model
 
 API_KEY = os.getenv("APCA_API_KEY_ID")
 API_SECRET = os.getenv("APCA_API_SECRET_KEY")
-BASE_URL = os.getenv("APCA_API_BASE_URL", "https://paper-api.alpaca.markets")
+BASE_URL = os.getenv("APCA_API_BASE_URL", "https://paper-api.alpaca.markets/v2")
 
 api = REST(API_KEY, API_SECRET, BASE_URL, api_version='v2')
 
