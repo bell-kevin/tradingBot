@@ -3,7 +3,7 @@ name: Daily Paper-Trade
 on:
   schedule:
     # 5 minutes after NYSE close (21:05 UTC = 17:05 EDT). Adjust as needed.
-    - cron:  '05 15 * * 1-5'
+    - cron:  '05 20 * * 1-5'
 
 jobs:
   trade:
