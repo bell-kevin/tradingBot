@@ -1,10 +1,10 @@
 """Gradient Boosting trading bot.
 
-This example uses a ``GradientBoostingRegressor`` model trained on lagged closing
-prices and runs a simple backtest. The strategy buys when tomorrow's predicted
-price is higher than today's and sells otherwise. Leverage can be fixed or
-dynamically adjusted based on the expected price change. Results include average
-profit per day.
+This example uses a ``GradientBoostingRegressor`` trained on lagged closing
+prices and several technical indicators.  The strategy buys when tomorrow's
+predicted price is higher than today's and sells otherwise.  Leverage can be
+fixed or dynamically adjusted based on the expected price change.  Results
+include average profit per day.
 
 Disclaimer: this code is for research and educational purposes only and carries
 no guarantee of profitability. Use at your own risk.
@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 
 
 @dataclass
@@ -37,29 +37,52 @@ def fetch_data(symbol: str, start: str, end: str | None = None) -> pd.DataFrame:
     return data
 
 
+def compute_rsi(series: pd.Series, window: int = 14) -> pd.Series:
+    """Compute the Relative Strength Index (RSI)."""
+    delta = series.diff()
+    gain = delta.where(delta > 0, 0.0)
+    loss = -delta.where(delta < 0, 0.0)
+    avg_gain = gain.rolling(window).mean()
+    avg_loss = loss.rolling(window).mean()
+    rs = avg_gain / avg_loss
+    rsi = 100 - 100 / (1 + rs)
+    return rsi
+
+
 def prepare_features(
     data: pd.DataFrame, window: int = 5
 ) -> tuple[pd.DataFrame, pd.Series]:
-    """Create lagged close price features."""
+    """Create lagged price and technical indicator features."""
     df = data.copy()
     for i in range(1, window + 1):
         df[f"lag_{i}"] = df["Close"].shift(i)
+    df["sma_5"] = df["Close"].rolling(5).mean()
+    df["sma_10"] = df["Close"].rolling(10).mean()
+    df["rsi_14"] = compute_rsi(df["Close"], 14)
     df = df.dropna()
-    X = df[[f"lag_{i}" for i in range(1, window + 1)]]
+    feature_cols = [f"lag_{i}" for i in range(1, window + 1)] + [
+        "sma_5",
+        "sma_10",
+        "rsi_14",
+    ]
+    X = df[feature_cols]
     y = df["Close"].shift(-1).dropna()
     X = X.iloc[:-1]
     return X, y
 
 
-def train_model(X: pd.DataFrame, y: pd.Series) -> GradientBoostingRegressor:
-    """Train a Gradient Boosting model using grid search."""
+def train_model(
+    X: pd.DataFrame, y: pd.Series, cv_splits: int = 5
+) -> GradientBoostingRegressor:
+    """Train a Gradient Boosting model using time series cross validation."""
     params = {
         "n_estimators": [200, 400, 600],
         "learning_rate": [0.05, 0.1, 0.2],
         "max_depth": [2, 3, 4],
     }
     gbr = GradientBoostingRegressor(random_state=42)
-    search = GridSearchCV(gbr, params, cv=5, n_jobs=-1)
+    tscv = TimeSeriesSplit(n_splits=cv_splits)
+    search = GridSearchCV(gbr, params, cv=tscv, n_jobs=-1)
     search.fit(X, y)
     return search.best_estimator_
 
@@ -72,6 +95,7 @@ def backtest(
     leverage: float = 1.5,
     dynamic_factor: float = 0.0,
     max_leverage: float = 10.0,
+    train_ratio: float = 0.7,
 ) -> List[TradeResult]:
     """Run a leveraged backtest.
 
@@ -82,18 +106,21 @@ def backtest(
     """
     data = fetch_data(symbol, start, end)
     feats, target = prepare_features(data, window=window)
-    model = train_model(feats, target)
+    split_idx = max(1, int(len(feats) * train_ratio))
+    train_X, train_y = feats.iloc[:split_idx], target.iloc[:split_idx]
+    test_X = feats.iloc[split_idx:]
+    model = train_model(train_X, train_y)
 
     results: List[TradeResult] = []
     cash = 100.0
     position = 0.0
     debt = 0.0
 
-    for idx in range(len(feats)):
+    for idx in range(len(test_X)):
         # Keep feature names when predicting to avoid sklearn warnings
-        X_row = feats.iloc[[idx]]
+        X_row = test_X.iloc[[idx]]
         pred_price = model.predict(X_row)[0]
-        current_price = data["Close"].iloc[idx]
+        current_price = data["Close"].loc[test_X.index[idx]]
         if pred_price > current_price and cash > 0.0:
             if dynamic_factor > 0:
                 gain_pct = (pred_price - current_price) / current_price
@@ -109,7 +136,9 @@ def backtest(
             debt = 0.0
             position = 0.0
         portfolio_value = cash + position * current_price - debt
-        results.append(TradeResult(day=feats.index[idx], value=portfolio_value))
+        results.append(
+            TradeResult(day=test_X.index[idx], value=portfolio_value)
+        )
 
     return results
 
@@ -166,6 +195,7 @@ async def run_async(
     leverage: float = 1.5,
     dynamic_factor: float = 0.0,
     max_leverage: float = 10.0,
+    train_ratio: float = 0.7,
 ) -> None:
     loop = asyncio.get_running_loop()
     with ThreadPoolExecutor() as executor:
@@ -180,6 +210,7 @@ async def run_async(
                 leverage,
                 dynamic_factor,
                 max_leverage,
+                train_ratio,
             )
             for sym in symbols
         ]
@@ -213,5 +244,6 @@ if __name__ == "__main__":
             leverage=2.0,
             dynamic_factor=200.0,
             max_leverage=50.0,
+            train_ratio=0.7,
         )
     )
