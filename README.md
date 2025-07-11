@@ -294,3 +294,5 @@ Cron or systemd timer running
     Logs rotating (e.g., via logrotate)
 
 That’s it! You’re now running a live, daily-retraining bot on your own Linux server with zero hosting fees. Good luck—and trade responsibly!
+
+<p align="right"><a href="#readme-top">back to top</a></p>
