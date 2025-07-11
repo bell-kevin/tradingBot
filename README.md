@@ -22,15 +22,20 @@ Swap out yfinance for live data
 from alpaca_trade_api import REST
 
 API_KEY = "your_key"
+
 API_SECRET = "your_secret"
+
 BASE_URL = "https://paper-api.alpaca.markets"  # switch to live URL when going live
+
 api = REST(API_KEY, API_SECRET, BASE_URL)
 
 # Fetch barset for symbol
 barset = api.get_barset("SPY", "day", start="2023-01-01", end="2025-07-07")
+
 data = barset.df["SPY"]
 
 Execute real orders
+
 Replace your “if pred>price then buy” logic with:
 
     if signal == "buy":
