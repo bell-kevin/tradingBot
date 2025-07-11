@@ -7,6 +7,8 @@ Here’s a roadmap for taking you into a live, money-making bot—first in the s
 
     Open an Alpaca account
 
+https://app.alpaca.markets/dashboard/overview
+
         Sign up at Alpaca Markets and get your paper-trading API keys.
 
         Once you’re happy with paper-trading results, upgrade to a funded (live) account.
