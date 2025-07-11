@@ -1,6 +1,0 @@
-pandas
-yfinance
-scikit-learn
-numpy
-torch
-xgboost
