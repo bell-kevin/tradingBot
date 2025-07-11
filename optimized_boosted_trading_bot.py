@@ -133,9 +133,10 @@ def train_and_validate(
     best_leverage = leverage_values[0]
     best_dynamic = dynamic_values[0]
     preds = pd.Series(model.predict(val_X), index=val_X.index)
+    val_prices = data["Close"].loc[val_X.index]
     for lev in leverage_values:
         for dyn in dynamic_values:
-            results = simulate(val_y, preds, lev, dyn)
+            results = simulate(val_prices, preds, lev, dyn)
             score = evaluate_profit(results)
             if score > best_score:
                 best_score = score
