@@ -1,10 +1,10 @@
 """Gradient Boosting trading bot.
 
-This example uses a ``GradientBoostingRegressor`` model trained on lagged closing
-prices and runs a simple backtest. The strategy buys when tomorrow's predicted
-price is higher than today's and sells otherwise. Leverage can be fixed or
-dynamically adjusted based on the expected price change. Results include average
-profit per day.
+This example uses a ``GradientBoostingRegressor`` trained on lagged closing
+prices and several technical indicators.  The strategy buys when tomorrow's
+predicted price is higher than today's and sells otherwise.  Leverage can be
+fixed or dynamically adjusted based on the expected price change.  Results
+include average profit per day.
 
 Disclaimer: this code is for research and educational purposes only and carries
 no guarantee of profitability. Use at your own risk.
@@ -37,15 +37,35 @@ def fetch_data(symbol: str, start: str, end: str | None = None) -> pd.DataFrame:
     return data
 
 
+def compute_rsi(series: pd.Series, window: int = 14) -> pd.Series:
+    """Compute the Relative Strength Index (RSI)."""
+    delta = series.diff()
+    gain = delta.where(delta > 0, 0.0)
+    loss = -delta.where(delta < 0, 0.0)
+    avg_gain = gain.rolling(window).mean()
+    avg_loss = loss.rolling(window).mean()
+    rs = avg_gain / avg_loss
+    rsi = 100 - 100 / (1 + rs)
+    return rsi
+
+
 def prepare_features(
     data: pd.DataFrame, window: int = 5
 ) -> tuple[pd.DataFrame, pd.Series]:
-    """Create lagged close price features."""
+    """Create lagged price and technical indicator features."""
     df = data.copy()
     for i in range(1, window + 1):
         df[f"lag_{i}"] = df["Close"].shift(i)
+    df["sma_5"] = df["Close"].rolling(5).mean()
+    df["sma_10"] = df["Close"].rolling(10).mean()
+    df["rsi_14"] = compute_rsi(df["Close"], 14)
     df = df.dropna()
-    X = df[[f"lag_{i}" for i in range(1, window + 1)]]
+    feature_cols = [f"lag_{i}" for i in range(1, window + 1)] + [
+        "sma_5",
+        "sma_10",
+        "rsi_14",
+    ]
+    X = df[feature_cols]
     y = df["Close"].shift(-1).dropna()
     X = X.iloc[:-1]
     return X, y
