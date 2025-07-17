@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from alpaca_trade_api import REST
+from alpaca_trade_api import REST, TimeFrame
 from your_module import prepare_features, train_model
 
 API_KEY = os.getenv("APCA_API_KEY_ID")
@@ -14,7 +14,7 @@ def fetch_historical(symbol: str, start: str) -> pd.DataFrame:
     all_bars = []
     next_start = start
     while True:
-        bars = api.get_bars(symbol, "day", start=next_start, limit=1000).df
+        bars = api.get_bars(symbol, TimeFrame.Day, start=next_start, limit=1000).df
         if bars.empty:
             break
         bars = bars.tz_convert(None)
@@ -31,8 +31,8 @@ def live_trade(symbol: str, start: str):
     X, y = prepare_features(data)
     model = train_model(X, y)
 
-    today_bar = api.get_barset(symbol, "day", limit=1).df.iloc[-1]
-    current_price = today_bar['close']
+    latest_bar = api.get_latest_bar(symbol)
+    current_price = latest_bar.c
 
     last_features = X.iloc[[-1]]
     pred_price = model.predict(last_features)[0]
