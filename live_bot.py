@@ -6,15 +6,18 @@ from your_module import prepare_features, train_model
 API_KEY = os.getenv("APCA_API_KEY_ID")
 API_SECRET = os.getenv("APCA_API_SECRET_KEY")
 BASE_URL = os.getenv("APCA_API_BASE_URL", "https://paper-api.alpaca.markets")
+DATA_FEED = os.getenv("APCA_API_DATA_FEED", "iex")
 
-api = REST(API_KEY, API_SECRET, BASE_URL, api_version='v2')
+api = REST(API_KEY, API_SECRET, BASE_URL, api_version='v2', data_feed=DATA_FEED)
 
 
 def fetch_historical(symbol: str, start: str) -> pd.DataFrame:
     all_bars = []
     next_start = start
     while True:
-        bars = api.get_bars(symbol, TimeFrame.Day, start=next_start, limit=1000).df
+        bars = api.get_bars(
+            symbol, TimeFrame.Day, start=next_start, limit=1000, feed=DATA_FEED
+        ).df
         if bars.empty:
             break
         bars = bars.tz_convert(None)
