@@ -8,7 +8,9 @@ API_SECRET = os.getenv("APCA_API_SECRET_KEY")
 BASE_URL = os.getenv("APCA_API_BASE_URL", "https://paper-api.alpaca.markets")
 DATA_FEED = os.getenv("APCA_API_DATA_FEED", "iex")
 
-api = REST(API_KEY, API_SECRET, BASE_URL, api_version='v2', data_feed=DATA_FEED)
+# The REST constructor no longer accepts a data_feed argument. Specify the feed
+# when requesting bars instead.
+api = REST(API_KEY, API_SECRET, BASE_URL, api_version='v2')
 
 
 def fetch_historical(symbol: str, start: str) -> pd.DataFrame:
