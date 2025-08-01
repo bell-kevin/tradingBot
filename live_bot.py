@@ -36,7 +36,9 @@ def live_trade(symbol: str, start: str):
     X, y = prepare_features(data)
     model = train_model(X, y)
 
-    latest_bar = api.get_latest_bar(symbol)
+    # Use the same data feed for the latest bar as for historical bars to avoid
+    # HTTP 403 errors when the default feed isn't accessible.
+    latest_bar = api.get_latest_bar(symbol, feed=DATA_FEED)
     current_price = latest_bar.c
 
     last_features = X.iloc[[-1]]
