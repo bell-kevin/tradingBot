@@ -22,7 +22,11 @@ def fetch_historical(symbol: str, start: str) -> pd.DataFrame:
         ).df
         if bars.empty:
             break
-        bars = bars.tz_convert(None)
+        # ``get_bars`` may return either timezone-aware or timezone-naive
+        # indices depending on the API version. ``tz_localize(None)`` gracefully
+        # handles both cases by removing the timezone when present without
+        # raising an exception when it's already naive.
+        bars = bars.tz_localize(None)
         bars.rename(columns={'close': 'Close'}, inplace=True)
         all_bars.append(bars)
         next_start = (bars.index[-1] + pd.Timedelta(days=1)).strftime('%Y-%m-%d')
