@@ -59,7 +59,7 @@ Replace your “if pred>price then buy” logic with:
 
         Local: schedule your script via cron (Linux/Mac) or Task Scheduler (Windows).
 
-        Cloud: spin up an always-on instance on AWS Free Tier, Google Cloud (f1-micro), or Oracle Always Free VM.
+        Cloud: spin up an always-on instance on AWS Free Tier, Google Cloud (f1-micro), etc.
 
     Go live
 
