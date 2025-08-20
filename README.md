@@ -241,6 +241,7 @@ crontab -e
 
 Add this line (runs at 14:05 MDT Mon–Fri)
 
+    MAILTO=bellkevin@pm.me
     5 14 * * 1-5   /home/kevin/projects/your-trading-bot/venv/bin/python \
       /home/kevin/projects/your-trading-bot/live_bot.py >> /home/kevin/logs/trading_bot.log 2>&1
 
@@ -284,7 +285,7 @@ Enable & start
 
     Logs: check ~/logs/trading_bot.log daily.
 
-    Email Alerts: if you want failures emailed, prefix your cron line with MAILTO=you@domain.com.
+    Email Alerts: if you want failures emailed, prefix your cron line with MAILTO=you@domain.com, as in the example above.
 
     Crash Recovery: with systemd, failures auto-restart if you add Restart=on-failure in the service block.
 

@@ -1,0 +1,2 @@
+MAILTO=bellkevin@pm.me
+5 14 * * 1-5 /home/kevin/projects/your-trading-bot/venv/bin/python /home/kevin/projects/your-trading-bot/live_bot.py >> /home/kevin/logs/trading_bot.log 2>&1 || tail -n 50 /home/kevin/logs/trading_bot.log
